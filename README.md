@@ -18,7 +18,7 @@ remove it from your Trakt Watchlist and the native Trakt connection will add it 
     git clone https://github.com/keldian/StarrTrakt.git /path/to/destination
     ```
 
-1. Set up environment variables with your Trakt.tv API credentials:
+1. Set up environment variables with your Trakt.tv API credentials. Examples:
 
    #### Docker Compose
 
