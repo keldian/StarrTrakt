@@ -4,7 +4,9 @@ import json
 import logging
 import logging.handlers
 import os
+import sys
 import time
+import traceback
 import urllib.error
 import urllib.request
 
@@ -13,43 +15,42 @@ TRAKT_CLIENT_ID = os.environ.get("TRAKT_CLIENT_ID")
 TRAKT_CLIENT_SECRET = os.environ.get("TRAKT_CLIENT_SECRET")
 TRAKT_REDIRECT_URI = "urn:ietf:wg:oauth:2.0:oob"
 
-def setup_logging(name=None):
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    logs_dir = os.path.join(script_dir, "logs")
-    tmp_dir = os.path.join(script_dir, "tmp")
-    os.makedirs(logs_dir, exist_ok=True)
-    os.makedirs(tmp_dir, exist_ok=True)
+if not TRAKT_CLIENT_ID or not TRAKT_CLIENT_SECRET:
+    print("ERROR: TRAKT_CLIENT_ID and TRAKT_CLIENT_SECRET must be provided as environment variables.", flush=True)
+    sys.exit(1)
 
+# --- Logging setup ---
+script_dir = os.path.dirname(os.path.abspath(__file__))
+logs_dir = os.path.join(script_dir, "logs")
+tmp_dir = os.path.join(script_dir, "tmp")
+os.makedirs(logs_dir, exist_ok=True)
+os.makedirs(tmp_dir, exist_ok=True)
+
+def setup_logging():
     log_path = os.path.join(logs_dir, "starrtrakt.log")
-
     try:
-        # Only configure root logger once
-        if not logging.getLogger().handlers:
-            file_handler = logging.handlers.RotatingFileHandler(
-                log_path, maxBytes=2 * 1024 * 1024, backupCount=5
-            )
-            file_handler.setLevel(logging.INFO)
-            file_handler.setFormatter(logging.Formatter('%(asctime)s %(name)s %(levelname)s %(message)s'))
+        file_handler = logging.handlers.RotatingFileHandler(
+            log_path, maxBytes=2 * 1024 * 1024, backupCount=5
+        )
+        file_handler.setLevel(logging.INFO)
+        file_handler.setFormatter(logging.Formatter('%(asctime)s %(name)s %(levelname)s %(message)s'))
 
-            logging.basicConfig(
-                level=logging.INFO,
-                handlers=[file_handler]
-            )
+        logging.basicConfig(
+            level=logging.INFO,
+            handlers=[file_handler]
+        )
     except Exception as e:
         print(f"WARNING: Could not initialize file logging: {e}", flush=True)
-        if not logging.getLogger().handlers:
-            logging.basicConfig(
-                level=logging.INFO,
-                format='%(asctime)s %(name)s %(levelname)s %(message)s',
-                handlers=[
-                    logging.StreamHandler()
-                ]
-            )
-
-    return logging.getLogger(name if name else __name__)
+        logging.basicConfig(
+            level=logging.INFO,
+            format='%(asctime)s %(name)s %(levelname)s %(message)s',
+            handlers=[logging.StreamHandler()]
+        )
+    return logging.getLogger(__name__)
 
 logger = setup_logging()
 
+# --- HTTP/API Helpers ---
 def http_post(url, data, headers=None, timeout=10):
     req = urllib.request.Request(
         url,
@@ -65,11 +66,8 @@ def http_post(url, data, headers=None, timeout=10):
     except Exception as e:
         raise
 
-# --- TRAKT TOKEN MANAGEMENT ---
-
+# --- Trakt Token Management ---
 def get_token_file_path():
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    tmp_dir = os.path.join(script_dir, "tmp")
     return os.path.join(tmp_dir, "trakt_tokens.json")
 
 def trakt_load_tokens():
@@ -85,8 +83,6 @@ def trakt_save_tokens(tokens):
         json.dump(tokens, f, indent=2)
 
 def trakt_is_token_expired(tokens):
-    # Trakt "created_at" is in seconds since epoch, "expires_in" is in seconds
-    # Add a buffer of 60 seconds
     if not tokens or "created_at" not in tokens or "expires_in" not in tokens:
         return True
     return time.time() > (tokens["created_at"] + tokens["expires_in"] - 60)
@@ -134,7 +130,6 @@ def trakt_get_valid_tokens():
         except Exception as e:
             logger.warning(f"Trakt token refresh failed: {e}, falling back to PIN.")
     
-    # PIN-based authentication
     print("To authorize this script with Trakt, visit:")
     print(f"https://trakt.tv/oauth/authorize?response_type=code&client_id={TRAKT_CLIENT_ID}&redirect_uri={TRAKT_REDIRECT_URI}")
     pin = input("Enter the PIN provided by Trakt: ").strip()
@@ -145,7 +140,7 @@ def trakt_get_valid_tokens():
     logger.info("Successfully authorized Trakt with new PIN.")
     return new_tokens
 
-def trakt_auth_headers():
+def trakt_headers():
     tokens = trakt_get_valid_tokens()
     return {
         "Authorization": f"Bearer {tokens['access_token']}",
@@ -154,15 +149,12 @@ def trakt_auth_headers():
         "trakt-api-key": TRAKT_CLIENT_ID
     }
 
-def trakt_headers():
-    return trakt_auth_headers()
-
+# --- Trakt Watchlist Management ---
 class TraktWatchlistConnection:
     def __init__(self):
         self.trakt_base_url = "https://api.trakt.tv"
 
     def _make_watchlist_request(self, action, media_type, item):
-        """Handle common watchlist operations with retry logic"""
         key = "shows" if media_type == "series" else "movies"
         payload = {key: [item]}
         endpoint = "/sync/watchlist/remove" if action == "remove" else "/sync/watchlist"
@@ -178,7 +170,7 @@ class TraktWatchlistConnection:
             
             if status == 401 and attempt == 0:
                 logger.info("Trakt token expired/unauthorized, refreshing and retrying...")
-                trakt_get_valid_tokens()  # This will refresh if needed
+                trakt_get_valid_tokens()
                 continue
                 
             if status >= 400:
@@ -195,30 +187,25 @@ class TraktWatchlistConnection:
         return self._make_watchlist_request("remove", media_type, item)
 
     def test_connection(self):
-        """Test Trakt authentication by calling /users/me"""
         try:
             logger.info("Testing Trakt authentication by calling /users/me")
             headers = trakt_headers()
-            body, status = http_post(
+            req = urllib.request.Request(
                 f"{self.trakt_base_url}/users/me",
-                data=None,
-                headers=headers
+                headers=headers,
+                method="GET"
             )
-            if status >= 400:
-                raise Exception(f"HTTP {status}: {body}")
-                
-            data = json.loads(body)
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
             print("Trakt authentication successful. User:", data.get("username", "<unknown>"))
             logger.info("Trakt authentication test passed. User: %s", data.get("username", "<unknown>"))
             return True
         except Exception as e:
-            logger.error(f"Trakt authentication test failed: {e}")
+            logger.error(f"Trakt authentication test failed: {e}\n{traceback.format_exc()}")
             print(f"Trakt authentication test failed: {e}")
             return False
 
-
 def format_item(event_data):
-    """Format event data into Trakt item format"""
     ids = {}
     if event_data.get('imdbId'):
         ids['imdb'] = event_data['imdbId']
@@ -234,33 +221,35 @@ def format_item(event_data):
         item["year"] = event_data['year']
     return item
 
-
-class StarrEventHandler:
-    """Base class for handling Starr application events"""
-    
-    def __init__(self, application_name, media_type, env_prefix):
-        self.logger = setup_logging(application_name)
+class EventHandler:
+    def __init__(self, service_type):
+        self.service_type = service_type
+        self.logger = logger
         self.conn = TraktWatchlistConnection()
-        self.media_type = media_type
-        self.env_prefix = env_prefix
-        self.add_events = []  # Override in subclass
-        self.remove_events = []  # Override in subclass
+        
+        if service_type == "radarr":
+            self.media_type = "movie"
+            self.env_prefix = "radarr_movie"
+            self.add_events = ["movieadded"]
+            self.remove_events = ["download", "moviedelete"]
+        else:  # sonarr
+            self.media_type = "series"
+            self.env_prefix = "sonarr_series"
+            self.add_events = ["seriesadd"]
+            self.remove_events = ["download", "seriesdelete"]
 
     def handle_event(self, event_type, event_data):
-        """Handle Starr application events"""
+        if event_type.lower() == "test":
+            return self.conn.test_connection()
+
         if not event_data:
             self.logger.warning("No valid event data found, skipping.")
             return False
-
-        # Test event handling
-        if event_type.lower() == "test":
-            return self.conn.test_connection()
         
         try:
             item = format_item(event_data)
             event_type_lower = event_type.lower()
             
-            # Handle different event types
             if event_type_lower in self.add_events:
                 result = self.conn.add_to_watchlist(self.media_type, item)
                 self.logger.info(f"Added {self.media_type} to watchlist: {result}")
@@ -281,7 +270,6 @@ class StarrEventHandler:
             return False
 
     def build_event_data(self):
-        """Build event data from environment variables"""
         title_var = f"{self.env_prefix}_title"
         if not os.getenv(title_var):
             return None
@@ -292,7 +280,6 @@ class StarrEventHandler:
             'imdbId': os.getenv(f"{self.env_prefix}_imdbid"),
         }
         
-        # Add numeric IDs
         for id_type in ['tmdbid', 'tvdbid']:
             env_key = f"{self.env_prefix}_{id_type}"
             if os.getenv(env_key):
@@ -300,22 +287,38 @@ class StarrEventHandler:
         
         return data
 
-class SonarrEventHandler(StarrEventHandler):
-    def __init__(self):
-        super().__init__(
-            application_name="sonarr",
-            media_type="series",
-            env_prefix="sonarr_series"
+def main():
+    try:
+        # Detect service type from environment variables
+        service_type = "radarr" if os.getenv("radarr_eventtype") else "sonarr"
+        handler = EventHandler(service_type)
+        
+        # Get event type from environment or command line
+        event_type = (
+            os.getenv(f"{service_type}_eventtype") or 
+            (sys.argv[1] if len(sys.argv) > 1 else "test")
         )
-        self.add_events = ["seriesadd"]
-        self.remove_events = ["download", "seriesdelete"]
+        
+        # Get event data from command line or environment
+        if len(sys.argv) > 2:
+            try:
+                event_data = json.loads(sys.argv[2])
+            except json.JSONDecodeError as e:
+                print(f"ERROR: Invalid JSON data provided: {e}", flush=True)
+                sys.exit(1)
+        elif event_type.lower() == "test":
+            event_data = {}
+        else:
+            event_data = handler.build_event_data()
+            
+        success = handler.handle_event(event_type, event_data)
+        sys.exit(0 if success else 1)
+        
+    except Exception as e:
+        tb = traceback.format_exc()
+        print(f"FATAL ERROR: {e}\n{tb}", flush=True)
+        logger.error(f"FATAL ERROR: {e}\n{tb}")
+        sys.exit(1)
 
-class RadarrEventHandler(StarrEventHandler):
-    def __init__(self):
-        super().__init__(
-            application_name="radarr",
-            media_type="movie",
-            env_prefix="radarr_movie"
-        )
-        self.add_events = ["movieadded"]
-        self.remove_events = ["download", "moviedelete"]
+if __name__ == "__main__":
+    main()

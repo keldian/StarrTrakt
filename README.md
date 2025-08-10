@@ -1,4 +1,4 @@
-A set of Python scripts to sync your Starr PVR libraries with a Trakt.tv watchlist, to be used as a notification custom
+A Python script to sync your Starr PVR libraries with a Trakt.tv watchlist, to be used as a notification custom
 script alongside the native Trakt Connection.
 
 When a title is added to a library, this will also add it to your Trakt Watchlist. When a title is imported, this will
@@ -46,14 +46,12 @@ remove it from your Trakt Watchlist and the native Trakt connection will add it 
 
 1. Make the scripts executable:
     ```bash
-    chmod +x radarr_trakt.py sonarr_trakt.py
+    chmod +x starrtrakt.py
     ```
 
 1. Run the test command to authenticate with Trakt:
     ```bash
-    ./radarr_trakt.py test
-    # or
-    ./sonarr_trakt.py test
+    ./starrtrakt.py test
     ```
 
    Follow the prompts to authorize the application with your Trakt account.
@@ -71,7 +69,7 @@ In Radarr, go to Settings → Connect → + → Custom Script
     - On Movie Added
     - On Movie Delete
 
-- Path: `/path/to/radarr_trakt.py`
+- Path: `/path/to/starrtrakt.py`
 
 ## Sonarr Setup
 
@@ -87,7 +85,7 @@ In Sonarr, go to Settings → Connect → + → Custom Script and configure:
     - On Series Add
     - On Series Delete
 
-- Path: `/path/to/sonarr_trakt.py`
+- Path: `/path/to/starrtrakt.py`
 
 ## Usage
 
@@ -103,9 +101,7 @@ The scripts can automatically:
 You can test the connection to Trakt by running:
 
 ```bash
-./radarr_trakt.py test
-# or
-./sonarr_trakt.py test
+./starrtrakt.py test
 ```
 
 ## Logs
@@ -119,16 +115,8 @@ The logs directory will be automatically created if it doesn't exist.
 1. Check the logs in the `logs` directory for detailed error messages
 2. Ensure your Trakt.tv API credentials are correctly set in environment variables
 3. Try running the test command to verify authentication
-4. Check file permissions - scripts need to be executable
+4. Check file permissions—scripts need to be executable
 5. Verify the paths in Radarr/Sonarr connection settings
-
-## Development
-
-The code is split into three main Python files:
-
-- `common.py` - Shared functionality for Trakt.tv API interaction
-- `radarr_trakt.py` - Radarr-specific event handling
-- `sonarr_trakt.py` - Sonarr-specific event handling
 
 ## License
 
