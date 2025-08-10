@@ -37,7 +37,7 @@ remove it from your Trakt Watchlist and the native Trakt connection will add it 
    export TRAKT_CLIENT_SECRET="your_client_secret"
    ```
 
-1. To get these credentials:
+    To get these credentials:
 
     1. Visit https://trakt.tv/oauth/applications
     1. Create a new application
