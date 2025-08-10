@@ -44,7 +44,7 @@ remove it from your Trakt Watchlist and the native Trakt connection will add it 
     1. Set the Redirect URI to: `urn:ietf:wg:oauth:2.0:oob`
     1. Save and copy the Client ID and Client Secret
 
-1. Make the scripts executable:
+1. Make the script executable:
     ```bash
     chmod +x starrtrakt.py
     ```
@@ -58,7 +58,7 @@ remove it from your Trakt Watchlist and the native Trakt connection will add it 
 
 ## Radarr Setup
 
-In Radarr, go to Settings → Connect → + → Custom Script
+In Radarr, go to Settings → Connect → + → Custom Script and configure:
 
 - Name: Trakt.tv Watchlist
 
@@ -89,12 +89,11 @@ In Sonarr, go to Settings → Connect → + → Custom Script and configure:
 
 ## Usage
 
-The scripts can automatically:
+The script can automatically:
 
 - Add titles to your Trakt watchlist when they are added to your library
 - Remove titles from your Trakt watchlist when they are imported
 - Remove titles from your Trakt watchlist when they are deleted from your library
-- Create detailed logs in the `logs` directory
 
 ## Testing
 
@@ -115,7 +114,7 @@ The logs directory will be automatically created if it doesn't exist.
 1. Check the logs in the `logs` directory for detailed error messages
 2. Ensure your Trakt.tv API credentials are correctly set in environment variables
 3. Try running the test command to verify authentication
-4. Check file permissions—scripts need to be executable
+4. Check file permissions—script needs to be executable
 5. Verify the paths in Radarr/Sonarr connection settings
 
 ## License
