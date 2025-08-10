@@ -110,11 +110,9 @@ You can test the connection to Trakt by running:
 
 ## Logs
 
-Logs are stored in the `logs` directory:
+All logs are stored in the `logs/starrtrakt.log` file. The log file is automatically rotated when it reaches 2MB in size, keeping up to 5 backup files (starrtrakt.log.1 through starrtrakt.log.5).
 
-- `radarr_trakt.log` - Radarr events and actions
-- `sonarr_trakt.log` - Sonarr events and actions
-- `common.log` - Shared authentication and API operations
+The logs directory will be automatically created if it doesn't exist.
 
 ## Troubleshooting
 

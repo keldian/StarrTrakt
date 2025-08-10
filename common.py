@@ -13,38 +13,42 @@ TRAKT_CLIENT_ID = os.environ.get("TRAKT_CLIENT_ID")
 TRAKT_CLIENT_SECRET = os.environ.get("TRAKT_CLIENT_SECRET")
 TRAKT_REDIRECT_URI = "urn:ietf:wg:oauth:2.0:oob"
 
-def setup_logging(script_name):
+def setup_logging(name=None):
     script_dir = os.path.dirname(os.path.abspath(__file__))
     logs_dir = os.path.join(script_dir, "logs")
     tmp_dir = os.path.join(script_dir, "tmp")
     os.makedirs(logs_dir, exist_ok=True)
     os.makedirs(tmp_dir, exist_ok=True)
-    
-    log_path = os.path.join(logs_dir, f"{script_name}.log")
-    
-    try:
-        file_handler = logging.handlers.RotatingFileHandler(
-            log_path, maxBytes=2 * 1024 * 1024, backupCount=5
-        )
-        file_handler.setLevel(logging.INFO)
-        file_handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s %(message)s'))
 
-        logging.basicConfig(
-            level=logging.INFO,
-            handlers=[file_handler]
-        )
+    log_path = os.path.join(logs_dir, "starrtrakt.log")
+
+    try:
+        # Only configure root logger once
+        if not logging.getLogger().handlers:
+            file_handler = logging.handlers.RotatingFileHandler(
+                log_path, maxBytes=2 * 1024 * 1024, backupCount=5
+            )
+            file_handler.setLevel(logging.INFO)
+            file_handler.setFormatter(logging.Formatter('%(asctime)s %(name)s %(levelname)s %(message)s'))
+
+            logging.basicConfig(
+                level=logging.INFO,
+                handlers=[file_handler]
+            )
     except Exception as e:
         print(f"WARNING: Could not initialize file logging: {e}", flush=True)
-        logging.basicConfig(
-            level=logging.INFO,
-            format='%(asctime)s %(levelname)s %(message)s',
-            handlers=[
-                logging.StreamHandler()
-            ]
-        )
-    return logging.getLogger(__name__)
+        if not logging.getLogger().handlers:
+            logging.basicConfig(
+                level=logging.INFO,
+                format='%(asctime)s %(name)s %(levelname)s %(message)s',
+                handlers=[
+                    logging.StreamHandler()
+                ]
+            )
 
-logger = setup_logging("trakt_common")
+    return logging.getLogger(name if name else __name__)
+
+logger = setup_logging()
 
 def http_post(url, data, headers=None, timeout=10):
     req = urllib.request.Request(
@@ -235,7 +239,7 @@ class StarrEventHandler:
     """Base class for handling Starr application events"""
     
     def __init__(self, application_name, media_type, env_prefix):
-        self.logger = setup_logging(f"{application_name}_trakt")
+        self.logger = setup_logging(application_name)
         self.conn = TraktWatchlistConnection()
         self.media_type = media_type
         self.env_prefix = env_prefix
