@@ -1,6 +1,8 @@
-A set of Python scripts to sync your Starr PVR libraries with a Trakt.tv watchlist, to be used as a notification custom script alongside the native Trakt Connection.
+A set of Python scripts to sync your Starr PVR libraries with a Trakt.tv watchlist, to be used as a notification custom
+script alongside the native Trakt Connection.
 
-When a title is added to a library, this will also add it to your Trakt Watchlist. When a title is imported, this will remove it from your Trakt Watchlist and the native Trakt connection will add it to your Trakt collection.
+When a title is added to a library, this will also add it to your Trakt Watchlist. When a title is imported, this will
+remove it from your Trakt Watchlist and the native Trakt connection will add it to your Trakt collection.
 
 ## Features
 
@@ -18,13 +20,6 @@ When a title is added to a library, this will also add it to your Trakt Watchlis
 
 1. Set up environment variables with your Trakt.tv API credentials:
 
-   #### Shell
-
-       ```bash
-       export TRAKT_CLIENT_ID="your_client_id"
-       export TRAKT_CLIENT_SECRET="your_client_secret"
-       ```
-
    #### Docker Compose
 
       ```yaml
@@ -35,12 +30,19 @@ When a title is added to a library, this will also add it to your Trakt Watchlis
             TRAKT_CLIENT_SECRET: "your_client_secret"
       ```
 
+   #### Shell
+
+   ```bash
+   export TRAKT_CLIENT_ID="your_client_id"
+   export TRAKT_CLIENT_SECRET="your_client_secret"
+   ```
+
 1. To get these credentials:
 
-   1. Visit https://trakt.tv/oauth/applications
-   1. Create a new application
-   1. Set the Redirect URI to: `urn:ietf:wg:oauth:2.0:oob`
-   1. Save and copy the Client ID and Client Secret
+    1. Visit https://trakt.tv/oauth/applications
+    1. Create a new application
+    1. Set the Redirect URI to: `urn:ietf:wg:oauth:2.0:oob`
+    1. Save and copy the Client ID and Client Secret
 
 1. Make the scripts executable:
     ```bash
@@ -54,7 +56,7 @@ When a title is added to a library, this will also add it to your Trakt Watchlis
     ./sonarr_trakt.py test
     ```
 
-    Follow the prompts to authorize the application with your Trakt account.
+   Follow the prompts to authorize the application with your Trakt account.
 
 ## Radarr Setup
 
@@ -62,12 +64,12 @@ In Radarr, go to Settings → Connect → + → Custom Script
 
 - Name: Trakt.tv Watchlist
 
-    Supported triggers:
+  Supported triggers:
 
-  - On File Import
-  - On File Upgrade
-  - On Movie Added
-  - On Movie Delete
+    - On File Import
+    - On File Upgrade
+    - On Movie Added
+    - On Movie Delete
 
 - Path: `/path/to/radarr_trakt.py`
 
@@ -77,19 +79,20 @@ In Sonarr, go to Settings → Connect → + → Custom Script and configure:
 
 - Name: Trakt.tv Watchlist
 
-    Supported triggers:
+  Supported triggers:
 
-  - On File Import
-  - On File Upgrade
-  - On Import Complete
-  - On Series Add
-  - On Series Delete
+    - On File Import
+    - On File Upgrade
+    - On Import Complete
+    - On Series Add
+    - On Series Delete
 
 - Path: `/path/to/sonarr_trakt.py`
 
 ## Usage
 
 The scripts can automatically:
+
 - Add titles to your Trakt watchlist when they are added to your library
 - Remove titles from your Trakt watchlist when they are imported
 - Remove titles from your Trakt watchlist when they are deleted from your library
@@ -98,6 +101,7 @@ The scripts can automatically:
 ## Testing
 
 You can test the connection to Trakt by running:
+
 ```bash
 ./radarr_trakt.py test
 # or
@@ -107,6 +111,7 @@ You can test the connection to Trakt by running:
 ## Logs
 
 Logs are stored in the `logs` directory:
+
 - `radarr_trakt.log` - Radarr events and actions
 - `sonarr_trakt.log` - Sonarr events and actions
 - `common.log` - Shared authentication and API operations
@@ -122,6 +127,7 @@ Logs are stored in the `logs` directory:
 ## Development
 
 The code is split into three main Python files:
+
 - `common.py` - Shared functionality for Trakt.tv API interaction
 - `radarr_trakt.py` - Radarr-specific event handling
 - `sonarr_trakt.py` - Sonarr-specific event handling
