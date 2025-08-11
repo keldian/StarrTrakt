@@ -1,16 +1,14 @@
-A Python script to sync your Starr PVR libraries with a Trakt.tv watchlist, to be used as a notification custom
-script alongside the native Trakt Connection.
+A Python script to sync your libraries with a Trakt.tv watchlist, to be used as a custom script in Radarr and Sonarr's _Connect_ alongside the native Trakt connection.
 
-When a title is added to a library, this will also add it to your Trakt Watchlist. When a title is imported, this will
-remove it from your Trakt Watchlist and the native Trakt connection will add it to your Trakt collection.
+Similar to how the native connection syncs titles to your Trakt collection, this will sync wanted titles to your Trakt watchlist until they are imported.
 
-## Features
+### Features
 
 - Automatic Trakt.tv authentication with PIN-based setup
 - Token refresh handling
 - Detailed logging
 
-## Setup
+### Setup
 
 1. Clone this repository in a location accessible to your PVRs:
 
@@ -18,9 +16,18 @@ remove it from your Trakt Watchlist and the native Trakt connection will add it 
     git clone https://github.com/keldian/StarrTrakt.git /path/to/destination
     ```
 
-1. Set up environment variables with your Trakt.tv API credentials. Examples:
+1. Set up environment variables with your Trakt.tv API credentials.
 
-   #### Docker Compose
+    To get these credentials:
+
+    1. Visit https://trakt.tv/oauth/applications
+    1. Create a new application
+    1. Set the Redirect URI to: `urn:ietf:wg:oauth:2.0:oob`
+    1. Save and copy the Client ID and Client Secret
+
+    #### Examples
+
+    - ##### Docker Compose
 
       ```yaml
       services:
@@ -30,19 +37,12 @@ remove it from your Trakt Watchlist and the native Trakt connection will add it 
             TRAKT_CLIENT_SECRET: "your_client_secret"
       ```
 
-   #### Shell
+    - ##### Shell
 
-   ```bash
-   export TRAKT_CLIENT_ID="your_client_id"
-   export TRAKT_CLIENT_SECRET="your_client_secret"
-   ```
-
-    To get these credentials:
-
-    1. Visit https://trakt.tv/oauth/applications
-    1. Create a new application
-    1. Set the Redirect URI to: `urn:ietf:wg:oauth:2.0:oob`
-    1. Save and copy the Client ID and Client Secret
+       ```bash
+       export TRAKT_CLIENT_ID="your_client_id"
+       export TRAKT_CLIENT_SECRET="your_client_secret"
+       ```
 
 1. Make the script executable:
     ```bash
@@ -56,7 +56,7 @@ remove it from your Trakt Watchlist and the native Trakt connection will add it 
 
    Follow the prompts to authorize the application with your Trakt account.
 
-## Radarr Setup
+### Radarr Setup
 
 In Radarr, go to Settings → Connect → + → Custom Script and configure:
 
@@ -71,7 +71,7 @@ In Radarr, go to Settings → Connect → + → Custom Script and configure:
 
 - Path: `/path/to/starrtrakt.py`
 
-## Sonarr Setup
+### Sonarr Setup
 
 In Sonarr, go to Settings → Connect → + → Custom Script and configure:
 
@@ -87,7 +87,7 @@ In Sonarr, go to Settings → Connect → + → Custom Script and configure:
 
 - Path: `/path/to/starrtrakt.py`
 
-## Usage
+### Usage
 
 The script can automatically:
 
@@ -95,7 +95,7 @@ The script can automatically:
 - Remove titles from your Trakt watchlist when they are imported
 - Remove titles from your Trakt watchlist when they are deleted from your library
 
-## Testing
+### Testing
 
 You can test the connection to Trakt by running:
 
@@ -103,13 +103,13 @@ You can test the connection to Trakt by running:
 ./starrtrakt.py test
 ```
 
-## Logs
+### Logs
 
 All logs are stored in the `logs/starrtrakt.log` file. The log file is automatically rotated when it reaches 2MB in size, keeping up to 5 backup files (starrtrakt.log.1 through starrtrakt.log.5).
 
 The logs directory will be automatically created if it doesn't exist.
 
-## Troubleshooting
+### Troubleshooting
 
 1. Check the logs in the `logs` directory for detailed error messages
 2. Ensure your Trakt.tv API credentials are correctly set in environment variables
@@ -117,6 +117,6 @@ The logs directory will be automatically created if it doesn't exist.
 4. Check file permissions—script needs to be executable
 5. Verify the paths in Radarr/Sonarr connection settings
 
-## License
+### License
 
 MIT License - See LICENSE file for details
