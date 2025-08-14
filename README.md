@@ -62,7 +62,7 @@ In Radarr, go to Settings → Connect → + → Custom Script and configure:
 
 - Name: Trakt.tv Watchlist
 
-  Supported triggers:
+- Supported triggers:
 
     - On File Import
     - On File Upgrade
@@ -77,7 +77,7 @@ In Sonarr, go to Settings → Connect → + → Custom Script and configure:
 
 - Name: Trakt.tv Watchlist
 
-  Supported triggers:
+- Supported triggers:
 
     - On File Import
     - On File Upgrade
